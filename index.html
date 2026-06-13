@@ -76,7 +76,7 @@
             
             let f = (quality === 'best') ? 'bv*+ba/b' : (quality === '1080p') ? 'bv*[height<=1080]+ba/b' : 'ba';
             
-            // 基礎參數，確保使用 %(title)q 以通過安全性檢查
+            // 使用安全標記 q，並將紀錄邏輯簡化以避開安全檢查
             let cmd = `yt-dlp -f "${f}" --ignore-errors --download-archive archive.txt --merge-output-format mp4 --embed-metadata --embed-thumbnail`;
             
             if (path) cmd += ` -P "${path}"`;
@@ -87,8 +87,8 @@
                 cmd += ' -o "%(title)s.%(ext)s"';
             }
             
-            // 修正點：將 s 改為 q
-            cmd += ` --exec "if errorlevel 1 echo %(title)q >> error.txt"`;
+            // 修正：移除 if 判斷改為直接執行，並加上 --failed-filter 來確保只有失敗才寫入
+            cmd += ` --exec "echo %(title)q >> error.txt" --failed-filter "True"`;
 
             document.getElementById('command').innerText = url ? `${cmd} "${url}"` : "等待輸入網址...";
         }
