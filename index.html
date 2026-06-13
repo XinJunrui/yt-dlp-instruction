@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: radial-gradient(circle at top right, #1a1a1a, #000000); color: #e5e5e5; height: 100vh; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .btn-grad { background: linear-gradient(135deg, #3b82f6, #1e40af); transition: 0.3s; }
+        .btn-grad:hover { background: linear-gradient(135deg, #2563eb, #1e3a8a); }
+        input, select { background: rgba(0,0,0,0.3) !important; border: 1px solid #444 !important; color: #fff !important; font-size: 16px !important; }
+        .link-btn { color: #60a5fa; border: 1px solid #3b82f6; padding: 8px 16px; border-radius: 8px; font-size: 15px; font-weight: bold; }
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
+        .guide-text { font-size: 16px !important; line-height: 1.6; }
+    </style>
+</head>
+<body class="p-6 h-screen flex flex-col">
+
+    <div class="flex-grow flex gap-6 overflow-hidden">
+        
+        <div class="w-1/2 flex flex-col gap-6">
+            <div class="glass p-8 rounded-3xl shadow-2xl flex-shrink-0">
+                <h1 class="text-3xl font-bold mb-6 text-white">yt-dlp 指令產生器</h1>
+                <div class="space-y-4">
+                    <div>
+                        <label class="font-bold text-gray-400 mb-1 block text-sm">影音網址</label>
+                        <input type="text" id="url" class="w-full p-4 rounded-xl" placeholder="https://youtube.com/...">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="font-bold text-gray-400 mb-1 block text-sm">下載路徑</label>
+                            <input type="text" id="path" class="w-full p-4 rounded-xl" placeholder="">
+                        </div>
+                        <div>
+                            <label class="font-bold text-gray-400 mb-1 block text-sm">影片畫質</label>
+                            <select id="quality" class="w-full p-4 rounded-xl">
+                                <option value="best">最高畫質</option>
+                                <option value="1080p">1080p (Max)</option>
+                                <option value="audio_only">僅音訊</option>
+                            </select>
+                        </div>
+                    </div>
+                    <label class="flex items-center text-gray-300 text-sm">
+                        <input type="checkbox" id="autoFolder" checked class="mr-3 w-5 h-5 accent-blue-500"> 播放清單自動分類
+                    </label>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl flex-grow flex flex-col">
+                <label class="font-bold text-gray-400 mb-2 block text-sm">生成的終端機指令</label>
+                <pre id="command" class="bg-[#000] p-5 rounded-xl text-blue-300 font-mono text-[15px] flex-grow overflow-y-auto custom-scroll">等待輸入網址...</pre>
+                <button id="copyBtn" class="btn-grad mt-4 w-full py-4 rounded-xl font-bold text-base">複製指令</button>
+            </div>
+        </div>
+
+        <div class="w-1/2 glass p-8 rounded-3xl flex-grow overflow-y-auto custom-scroll">
+            <h2 class="text-2xl font-bold text-white mb-6">環境設定教學 (Windows)</h2>
+            
+            <h3 class="text-lg font-semibold text-white mb-2">1. 下載必要工具</h3>
+            <div class="flex gap-4 mb-6">
+                <a href="https://github.com/yt-dlp/yt-dlp#installation" target="_blank" class="link-btn">yt-dlp 下載</a>
+                <a href="https://www.gyan.dev/ffmpeg/builds/" target="_blank" class="link-btn">FFmpeg (git-full.7z)</a>
+            </div>
+            
+            <ol class="guide-text space-y-3 list-decimal ml-6 text-gray-300">
+                <li><b>提示：</b>若頁面內容太多，請按 <b>Ctrl + F</b> 輸入關鍵字 (如 <code>yt-dlp.exe</code>) 快速尋找。</li>
+                <li><b>yt-dlp：</b>進入連結後，尋找 <b>yt-dlp.exe</b> 並下載。</li>
+                <li><b>FFmpeg：</b>下載 <code>ffmpeg-git-full.7z</code>，解壓縮後進入 <code>bin</code> 資料夾。</li>
+                <li>在 C 槽建立 <code>C:\Tool</code> 資料夾。</li>
+                <li>將 <code>yt-dlp.exe</code> 與 <code>ffmpeg.exe</code> 等執行檔全部放入 <code>C:\Tool</code>。</li>
+                <li>搜尋 Windows 「編輯系統環境變數」→「環境變數」。</li>
+                <li>在「系統變數」的 <code>Path</code> 中新增 <code>C:\Tool</code>。</li>
+                <li><b>重要：</b>確定後，<b>請重新啟動終端機</b>，設定才會生效。</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function update() {
+            const url = document.getElementById('url').value.trim();
+            const path = document.getElementById('path').value.trim();
+            const autoFolder = document.getElementById('autoFolder').checked;
+            const quality = document.getElementById('quality').value;
+            let f = (quality === 'best') ? 'bv*+ba/b' : (quality === '1080p') ? 'bv*[height<=1080]+ba/b' : 'ba';
+            let cmd = `yt-dlp -f "${f}" --merge-output-format mp4 --embed-metadata --embed-thumbnail`;
+            if (path) cmd += ` -P "${path}"`;
+            if (autoFolder) cmd += ' -o "%(playlist,Other)s/%(title)s.%(ext)s"';
+            document.getElementById('command').innerText = url ? `${cmd} "${url}"` : "等待輸入網址...";
+        }
+        document.querySelectorAll('input, select').forEach(i => i.addEventListener('input', update));
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const text = document.getElementById('command').innerText;
+            if (text.includes("等待")) return;
+            navigator.clipboard.writeText(text).then(() => alert("指令已複製!"));
+        });
+        update();
+    </script>
+</body>
+</html>
