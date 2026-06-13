@@ -32,7 +32,7 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="font-bold text-gray-400 mb-1 block text-sm">下載路徑</label>
-                            <input type="text" id="path" class="w-full p-4 rounded-xl" placeholder="">
+                            <input type="text" id="path" class="w-full p-4 rounded-xl" placeholder="例如: D:\Videos">
                         </div>
                         <div>
                             <label class="font-bold text-gray-400 mb-1 block text-sm">影片畫質</label>
@@ -51,7 +51,7 @@
 
             <div class="glass p-6 rounded-3xl flex-grow flex flex-col">
                 <label class="font-bold text-gray-400 mb-2 block text-sm">生成的終端機指令</label>
-                <pre id="command" class="bg-[#000] p-5 rounded-xl text-blue-300 font-mono text-[15px] flex-grow overflow-y-auto custom-scroll">等待輸入網址...</pre>
+                <pre id="command" class="bg-[#000] p-5 rounded-xl text-blue-300 font-mono text-[14px] flex-grow overflow-y-auto custom-scroll">等待輸入網址...</pre>
                 <button id="copyBtn" class="btn-grad mt-4 w-full py-4 rounded-xl font-bold text-base">複製指令</button>
             </div>
         </div>
@@ -66,14 +66,11 @@
             </div>
             
             <ol class="guide-text space-y-3 list-decimal ml-6 text-gray-300">
-                <li><b>提示：</b>若頁面內容太多，請按 <b>Ctrl + F</b> 輸入關鍵字 (如 <code>yt-dlp.exe</code>) 快速尋找。</li>
-                <li><b>yt-dlp：</b>進入連結後，尋找 <b>yt-dlp.exe</b> 並下載。</li>
+                <li><b>yt-dlp：</b>下載 <code>yt-dlp.exe</code>。</li>
                 <li><b>FFmpeg：</b>下載 <code>ffmpeg-git-full.7z</code>，解壓縮後進入 <code>bin</code> 資料夾。</li>
-                <li>在 C 槽建立 <code>C:\Tool</code> 資料夾。</li>
-                <li>將 <code>yt-dlp.exe</code> 與 <code>ffmpeg.exe</code> 等執行檔全部放入 <code>C:\Tool</code>。</li>
-                <li>搜尋 Windows 「編輯系統環境變數」→「環境變數」。</li>
-                <li>在「系統變數」的 <code>Path</code> 中新增 <code>C:\Tool</code>。</li>
-                <li><b>重要：</b>確定後，<b>請重新啟動終端機</b>，設定才會生效。</li>
+                <li>在 C 槽建立 <code>C:\Tool</code> 資料夾，將上述兩個執行檔放入其中。</li>
+                <li>搜尋 Windows「編輯系統環境變數」→「環境變數」→「系統變數」的 <code>Path</code> → 新增 <code>C:\Tool</code>。</li>
+                <li><b>重要：</b>設定完成後，<b>請重新啟動終端機 (CMD/PowerShell)</b>。</li>
             </ol>
         </div>
     </div>
@@ -84,18 +81,36 @@
             const path = document.getElementById('path').value.trim();
             const autoFolder = document.getElementById('autoFolder').checked;
             const quality = document.getElementById('quality').value;
+            
+            // 畫質設定
             let f = (quality === 'best') ? 'bv*+ba/b' : (quality === '1080p') ? 'bv*[height<=1080]+ba/b' : 'ba';
-            let cmd = `yt-dlp -f "${f}" --merge-output-format mp4 --embed-metadata --embed-thumbnail`;
+            
+            // 基礎參數：包含錯誤忽略、下載記錄檔、Metadata
+            let cmd = `yt-dlp -f "${f}" --ignore-errors --download-archive archive.txt --merge-output-format mp4 --embed-metadata --embed-thumbnail`;
+            
             if (path) cmd += ` -P "${path}"`;
-            if (autoFolder) cmd += ' -o "%(playlist,Other)s/%(title)s.%(ext)s"';
+            
+            // 設定輸出路徑與錯誤紀錄
+            if (autoFolder) {
+                cmd += ' -o "%(playlist,Other)s/%(title)s.%(ext)s"';
+            } else {
+                cmd += ' -o "%(title)s.%(ext)s"';
+            }
+            
+            // 若失敗則寫入 error.txt
+            cmd += ` --exec "if errorlevel 1 echo %(title)s >> error.txt"`;
+
             document.getElementById('command').innerText = url ? `${cmd} "${url}"` : "等待輸入網址...";
         }
+        
         document.querySelectorAll('input, select').forEach(i => i.addEventListener('input', update));
+        
         document.getElementById('copyBtn').addEventListener('click', () => {
             const text = document.getElementById('command').innerText;
             if (text.includes("等待")) return;
             navigator.clipboard.writeText(text).then(() => alert("指令已複製!"));
         });
+        
         update();
     </script>
 </body>
