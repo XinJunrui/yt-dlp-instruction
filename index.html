@@ -76,7 +76,7 @@
             
             let f = (quality === 'best') ? 'bv*+ba/b' : (quality === '1080p') ? 'bv*[height<=1080]+ba/b' : 'ba';
             
-            // 安全修正：使用 --exec 與 %(title)q
+            // 基礎參數，修正使用 %(title)q 以符合 yt-dlp 安全規則
             let cmd = `yt-dlp -f "${f}" --ignore-errors --download-archive archive.txt --merge-output-format mp4 --embed-metadata --embed-thumbnail`;
             
             if (path) cmd += ` -P "${path}"`;
@@ -87,6 +87,7 @@
                 cmd += ' -o "%(title)s.%(ext)s"';
             }
             
+            // 強制使用 %(title)q 避免 Unsafe conversion 錯誤
             cmd += ` --exec "if errorlevel 1 echo %(title)q >> error.txt"`;
 
             document.getElementById('command').innerText = url ? `${cmd} "${url}"` : "等待輸入網址...";
